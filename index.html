@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MYarchives</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #6366f1;
+            --accent: #22d3ee;
+            --text: #f8fafc;
+        }
+
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg-color);
+            color: var(--text);
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- LANDING PAGE STYLE --- */
+        #landing-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 10vw, 5rem);
+            font-weight: 800; margin: 0;
+            background: linear-gradient(to right, #fff, var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .hero p { color: #94a3b8; font-size: 1.1rem; margin: 20px 0 40px; }
+
+        .btn-enter {
+            display: inline-block; padding: 16px 32px;
+            background: var(--primary); color: white;
+            text-decoration: none; border-radius: 12px;
+            font-weight: 600; cursor: pointer; transition: 0.3s;
+            border: none;
+        }
+
+        .btn-enter:hover { transform: translateY(-3px); filter: brightness(1.1); }
+
+        /* --- MAIN PAGE STYLE --- */
+        #main-page { display: none; padding: 20px; animation: fadeIn 0.5s ease; }
+
+        .container { max-width: 1200px; margin: auto; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px; background: rgba(30, 41, 59, 0.8);
+            border-radius: 20px; margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo { cursor: pointer; color: var(--accent); font-weight: 800; font-size: 1.2rem; }
+
+        select {
+            padding: 8px 12px; border-radius: 10px;
+            background: #0f172a; color: white; border: 1px solid #334155;
+        }
+
+        .roadmap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .day-card {
+            background: var(--card-bg); border-radius: 15px; padding: 15px;
+            min-height: 110px; border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer; position: relative; transition: 0.2s ease;
+        }
+
+        .day-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+        .day-card.active { border-left: 4px solid var(--primary); background: #1e2b4a; }
+
+        .day-num { font-size: 1.5em; font-weight: 800; color: rgba(255,255,255,0.05); position: absolute; top: 10px; right: 15px; }
+        .task-content { font-size: 0.9em; color: #94a3b8; margin-top: 20px; font-weight: 600; }
+        .task-content.saved { color: var(--accent); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 20px; width: 90%; max-width: 450px; border: 1px solid #334155; }
+        textarea { width: 100%; height: 120px; margin: 15px 0; padding: 12px; background: #0f172a; color: white; border: 1px solid #334155; border-radius: 10px; resize: none; outline: none; }
+        
+        .btn-group { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 10px 20px; border-radius: 10px; cursor: pointer; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media (max-width: 600px) { .roadmap-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+
+    <div id="landing-page">
+        <div class="hero">
+            <h1>MYarchives</h1>
+            <p>Arsipkan setiap progres dan catatan harianmu.</p>
+            <button class="btn-enter" onclick="navigateTo('main')">Buka Arsip</button>
+        </div>
+    </div>
+
+    <div id="main-page">
+        <div class="container">
+            <header>
+                <div class="logo" onclick="navigateTo('landing')">MYarchives</div>
+                <div class="controls">
+                    <select id="monthSelect" onchange="changePeriod()"></select>
+                    <select id="yearSelect" onchange="changePeriod()"></select>
+                </div>
+            </header>
+            <div class="roadmap-grid" id="roadmap"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <h3 id="modalTitle" style="margin:0">Catatan</h3>
+            <p id="modalDateDisplay" style="color: var(--accent); font-size: 0.8em;"></p>
+            <textarea id="taskInput" placeholder="Tulis sesuatu..."></textarea>
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="closeModal()">Batal</button>
+                <button class="btn-save" onclick="saveTask()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    let selectedMonth = new Date().getMonth();
+    let selectedYear = new Date().getFullYear();
+    let currentDay = null;
+
+    // FUNGSI NAVIGASI
+    function navigateTo(page) {
+        if (page === 'main') {
+            document.getElementById('landing-page').style.display = 'none';
+            document.getElementById('main-page').style.display = 'block';
+            init();
+        } else {
+            document.getElementById('landing-page').style.display = 'flex';
+            document.getElementById('main-page').style.display = 'none';
+        }
+    }
+
+    function init() {
+        const mSelect = document.getElementById('monthSelect');
+        const ySelect = document.getElementById('yearSelect');
+
+        let monthOptions = "";
+        months.forEach((m, i) => monthOptions += `<option value="${i}">${m}</option>`);
+        mSelect.innerHTML = monthOptions;
+        mSelect.value = selectedMonth;
+
+        let yearOptions = "";
+        for(let i = 2024; i <= 2030; i++) yearOptions += `<option value="${i}">${i}</option>`;
+        ySelect.innerHTML = yearOptions;
+        ySelect.value = selectedYear;
+
+        render();
+    }
+
+    function render() {
+        const roadmap = document.getElementById('roadmap');
+        const days = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+        const storageKey = `roadmap_${selectedMonth}_${selectedYear}`;
+        const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+
+        let cardsHTML = "";
+        for (let i = 1; i <= days; i++) {
+            const hasData = data[i] && data[i].trim() !== "";
+            const displayText = hasData ? "Tersimpan" : "<i>Kosong</i>";
+            const statusClass = hasData ? "saved" : "";
+            
+            cardsHTML += `
+                <div class="day-card ${hasData ? 'active' : ''}" onclick="openModal(${i})">
+                    <div class="day-num">${i}</div>
+                    <div class="task-content ${statusClass}">${displayText}</div>
+                </div>
+            `;
+        }
+        roadmap.innerHTML = cardsHTML;
+    }
+
+    function openModal(day) {
+        currentDay = day;
+        const storageKey = `roadmap_${selectedMonth}_${selectedYear}`;
+        const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+        document.getElementById('modalDateDisplay').innerText = `${day} ${months[selectedMonth]} ${selectedYear}`;
+        document.getElementById('taskInput').value = data[day] || '';
+        document.getElementById('taskModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
+
+    function saveTask() {
+        const storageKey = `roadmap_${selectedMonth}_${selectedYear}`;
+        const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+        const val = document.getElementById('taskInput').value;
+        if (val.trim()) data[currentDay] = val; else delete data[currentDay];
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        closeModal();
+        render();
+    }
+
+    function changePeriod() {
+        selectedMonth = parseInt(document.getElementById('monthSelect').value);
+        selectedYear = parseInt(document.getElementById('yearSelect').value);
+        render();
+    }
+</script>
+</body>
+</html>
